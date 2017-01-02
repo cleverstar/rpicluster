@@ -37,7 +37,7 @@ else
 fi
 
 if [ "$myhost" = "rpi0" ]; then 
-# elect the latest instance from particpants to push out data though rpi0
+# elect the latest instance from participants to push out data though rpi0
     first_wait=$(ls -1t $waitdir/.wait.* | head -1 | cut -d'.' -f3)
     rm $waitdir/.wait.$from_host # I'm ready!
 
