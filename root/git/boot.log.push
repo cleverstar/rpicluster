@@ -25,13 +25,15 @@ ssh rpi0 touch $mywait_file
 
 cd $gitdir
 if [ "$from_host" = "$myhost" ]; then
-# prepare log from localhost
-    for ((i=0; i<10; i++)); do
+# prepare log from localhost (after internet up and ntp synced)
+    for ((i=0; i<8; i++)); do
         myip=$(ifconfig wlan0 | grep -oP "inet addr:\K\S+") && break
         sleep 2
     done
+    /etc/init.d/ntp restart 
     
     update_file=boot.log.$myhost
+    ntp-wait -n 8 -s 2
     date > $update_file
     sed -e 's/.\[32m//' -e 's/.\[0m//' /var/log/boot.log >> $update_file
     echo "Host $(hostname) IP address $myip" >> $update_file
