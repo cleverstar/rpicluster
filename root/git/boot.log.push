@@ -38,10 +38,10 @@ fi
 
 if [ "$myhost" = "rpi0" ]; then 
 # elect the latest instance from participants to push out data though rpi0
-    first_wait=$(ls -1t $waitdir/.wait.* | head -1 | cut -d'.' -f3)
+    last_wait=$(ls -1t $waitdir/.wait.* | head -1 | cut -d'.' -f3)
     rm $waitdir/.wait.$from_host # I'm ready!
 
-    if [ "$from_host" = "$first_wait" ]; then
+    if [ "$from_host" = "$last_wait" ]; then
         while [ -f $waitdir/.wait.* ]; do
         # wait for every outstanding instances ready
             sleep 1
