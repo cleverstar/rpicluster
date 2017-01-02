@@ -1,0 +1,55 @@
+#!/bin/bash
+# This script runs locally on each node at startup.
+# Slave nodes will also re-invoke it remotely on rpi0
+# to allow rpi0 to aggregate all pending data and push it out to github.
+#
+# Usage: push [from_host]
+
+myhost=$(hostname)
+waitdir=/root/git
+gitdir=/root/git/rpilog
+if [ $# -gt 0 ]; then
+    from_host=$1
+else
+    from_host=$myhost
+fi
+
+# notify other instances to wait
+ssh rpi0 touch $waitdir/.wait.$from_host
+
+cd $gitdir
+if [ "$from_host" = "$myhost" ]; then
+# prepare log from localhost
+    for ((i=0; i<10; i++)); do
+        myip=$(ifconfig wlan0 | grep -oP "inet addr:\K\S+") && break
+        sleep 2
+    done
+    
+    update_file=boot.log.$myhost
+    ntp-wait -n 10 -s 2
+    date > $update_file
+    sed -e 's/.\[32m//' -e 's/.\[0m//' /var/log/boot.log >> $update_file
+    echo "Host $(hostname) IP address $myip" >> $update_file
+else
+# this is for rpi0 to aggregate data from slaves
+    update_file=boot.log.$from_host
+    scp $from_host:$gitdir/$update_file .
+fi
+
+if [ "$myhost" = "rpi0" ]; then 
+# elect one instance to push data out to github via rpi0
+    first_wait=$(ls -1 $waitdir/.wait.* | head -1 | cut -d'.' -f3)
+    rm $waitdir/.wait.$from_host # I'm ready!
+
+    if [ "$from_host" = "$first_wait" ]; then
+        while [ -f $waitdir/.wait.* ]; do
+        # wait for every outstanding instances ready
+            sleep 1
+        done
+        git commit -am "Updated boot.log"
+        git push origin --force
+    fi
+else
+# invoke remote aggregation instance on rpi0
+    ssh rpi0 $0 $myhost
+fi

@@ -1,0 +1,9 @@
+127.0.0.1	localhost
+::1		localhost ip6-localhost ip6-loopback
+ff02::1		ip6-allnodes
+ff02::2		ip6-allrouters
+
+10.5.5.1        rpi0 rpi0.cluster
+10.5.5.2        rpi1 rpi1.cluster
+10.5.5.3        rpi2 rpi2.cluster
+10.5.5.4        rpi3 rpi2.cluster

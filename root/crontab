@@ -1,0 +1,9 @@
+# to add this to your root crontab by running "crontab -e"
+
+HOME=/root
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+# m h  dom mon dow   command
+@reboot docker ps -q
+@reboot /root/git/boot.log.push
