@@ -27,7 +27,6 @@ if [ "$from_host" = "$myhost" ]; then
     done
     
     update_file=boot.log.$myhost
-    ntp-wait -n 10 -s 2
     date > $update_file
     sed -e 's/.\[32m//' -e 's/.\[0m//' /var/log/boot.log >> $update_file
     echo "Host $(hostname) IP address $myip" >> $update_file
