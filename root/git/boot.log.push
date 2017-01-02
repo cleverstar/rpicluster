@@ -13,9 +13,10 @@ if [ $# -gt 0 ]; then
 else
     from_host=$myhost
 fi
+mywait_file=$waitdir/.wait.boot.log.$from_host
 
 # notify other instances to wait
-ssh rpi0 touch $waitdir/.wait.$from_host
+ssh rpi0 touch $mywait_file
 
 cd $gitdir
 if [ "$from_host" = "$myhost" ]; then
@@ -37,16 +38,17 @@ else
 fi
 
 if [ "$myhost" = "rpi0" ]; then 
-# elect the latest instance from participants to push out data though rpi0
-    last_wait=$(ls -1t $waitdir/.wait.* | head -1 | cut -d'.' -f3)
-    rm $waitdir/.wait.$from_host # I'm ready!
+# elect the lastest wait instance to push out data through rpi0
+    find $waitdir -mmin +60 -type f -name ".wait.*" -delete
+    last_wait=$(ls -1t $waitdir/.wait.* | head -1)
+    rm $mywait_file # I'm ready!
 
-    if [ "$from_host" = "$last_wait" ]; then
+    if [ "$mywait_file" = "$last_wait" ]; then
         while [ -f $waitdir/.wait.* ]; do
         # wait for every outstanding instances ready
             sleep 1
         done
-        git commit -am "Updated boot.log"
+        git commit -am "Updated ${mywait_file#$waitdir/.wait.} etc"
         git push origin --force
     fi
 else
