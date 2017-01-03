@@ -13,27 +13,30 @@ if [ $# -gt 0 ]; then
 else
     from_host=$myhost
 fi
-mywait_file=$waitdir/.wait.boot.log.$from_host
-
-for ((i=0; i<10; i++)); do
-    ping -c 1 rpi0 > /dev/null 2>&1 && break
-    sleep 2
-done
 
 # notify other instances to wait
-ssh rpi0 touch $mywait_file
+mywait_file=$waitdir/.wait.boot.log.$from_host
+if [ "$myhost" = "rpi0" ]; then 
+    test "$from_host" = "rpi0" && touch $mywait_file
+else
+    for ((i=0; i<16; i++)); do
+        ping -c 1 rpi0 > /dev/null 2>&1 && break
+        sleep 2
+    done
+    ssh rpi0 touch $mywait_file
+fi
 
 cd $gitdir
 if [ "$from_host" = "$myhost" ]; then
 # prepare log from localhost (after internet up and ntp synced)
-    for ((i=0; i<8; i++)); do
+    for ((i=0; i<16; i++)); do
         myip=$(ifconfig wlan0 | grep -oP "inet addr:\K\S+") && break
         sleep 2
     done
     /etc/init.d/ntp restart 
     
     update_file=boot.log.$myhost
-    ntp-wait -n 8 -s 2
+    ntp-wait -n 16 -s 2
     date > $update_file
     sed -e 's/.\[32m//' -e 's/.\[0m//' /var/log/boot.log >> $update_file
     echo "Host $(hostname) IP address $myip" >> $update_file
@@ -44,19 +47,19 @@ else
 fi
 
 if [ "$myhost" = "rpi0" ]; then 
-# elect the lastest wait instance to push out data through rpi0
+# elect the first wait instance to push out data through rpi0
     find $waitdir -mmin +60 -type f -name ".wait.*" -delete
-    last_wait=$(ls -1t $waitdir/.wait.* | head -1)
-    rm $mywait_file # I'm ready!
+    first_wait=$(ls -1rt $waitdir/.wait.* | head -1)
 
-    if [ "$mywait_file" = "$last_wait" ]; then
-        while ls $waitdir/.wait.* > /dev/null 2>&1; do
-        # wait for every outstanding instances ready
+    if [ "$mywait_file" = "$first_wait" ]; then
+        while [ "$(ls $waitdir/.wait.*)" != "$mywait_file" ]; do
+        # wait for every other outstanding instances ready, except myself
             sleep 1
         done
         git commit -am "Updated ${mywait_file#$waitdir/.wait.} etc"
         git push origin --force
     fi
+    rm $mywait_file # I'm done
 else
 # invoke remote aggregation instance on rpi0
     ssh rpi0 $0 $myhost
