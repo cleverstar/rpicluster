@@ -30,7 +30,7 @@ cd $gitdir
 if [ "$from_host" = "$myhost" ]; then
 # 2.1 prepare log from localhost (after internet up and ntp synced)
     for ((i=0; i<16; i++)); do
-        myip=$(ifconfig wlan0 | grep -oP "inet addr:\K\S+") && break
+        ping -c 1 github > /dev/null 2>&1 && break
         sleep 2
     done
     /etc/init.d/ntp restart 
@@ -39,6 +39,7 @@ if [ "$from_host" = "$myhost" ]; then
     ntp-wait -n 16 -s 2
     date > $update_file
     sed -e 's/.\[32m//' -e 's/.\[0m//' /var/log/boot.log >> $update_file
+    myip=$(ifconfig wlan0 | grep -oP "inet addr:\K\S+") 
     echo "Host $(hostname) IP address $myip" >> $update_file
 else
 # 2.2 this is for rpi0 to aggregate data from slaves
