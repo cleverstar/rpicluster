@@ -10,3 +10,5 @@ rpi0: sudo apt-get install nfs-kernel-server
 slaves: sudo apt-get install autofs
 
 all: curl -sSL https://get.docker.com | sh
+
+super user name: pi
